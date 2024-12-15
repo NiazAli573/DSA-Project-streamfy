@@ -98,3 +98,82 @@ public:
         return temp;
     }
 };
+
+
+Stack videoHistory;
+
+void playVideo(const string& videoPath) {
+    cout << "Playing: " << videoPath << "\n";
+    system(("start wmplayer \"" + videoPath + "\"").c_str());
+}
+
+void backNavigation() {
+    if (!videoHistory.isEmpty()) {
+        string lastVideo = videoHistory.peek();
+        videoHistory.pop();
+        playVideo(lastVideo);
+    } else {
+        cout << "No videos in history!\n";
+    }
+}
+
+int main() {
+    Playlist playlist;
+    int choice;
+
+    do {
+        cout << "\nVideo Player Menu:\n";
+        cout << "1. Add Video to Playlist\n";
+        cout << "2. View Playlist\n";
+        cout << "3. Play Video from Playlist\n";
+        cout << "4. Back to Previous Video\n";
+        cout << "5. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: {
+                cin.ignore(); 
+                string name, path;
+                cout << "Enter video name: ";
+                getline(cin, name);
+                cout << "Enter video path: ";
+                getline(cin, path);
+                playlist.addVideo(name, path);
+                break;
+            }
+            case 2: {
+                cout << "Playlist:\n";
+                playlist.displayPlaylist();
+                break;
+            }
+            case 3: {
+                int videoNumber;
+                cout << "Enter video number to play: ";
+                cin >> videoNumber;
+                VideoNode* selectedVideo = playlist.getVideoAt(videoNumber);
+                if (selectedVideo) {
+                    videoHistory.push(selectedVideo->videoPath);
+                    playVideo(selectedVideo->videoPath);
+                } else {
+                    cout << "Invalid video number!\n";
+                }
+                break;
+            }
+            case 4: {
+                backNavigation();
+                break;
+            }
+            case 5: {
+                cout << "Exiting...\n";
+                break;
+            }
+            default: {
+                cout << "Invalid choice. Please try again.\n";
+                break;
+            }
+        }
+    } while (choice != 5);
+
+    return 0;
+}
