@@ -19,6 +19,50 @@ public:
     }
 };
 
+// Graph class to represent relationships between users
+class Graph {
+private:
+    vector<vector<int>> adjacencyList;
+
+public:
+    Graph(int size) {
+        adjacencyList.resize(size);
+    }
+
+    void addEdge(int user1, int user2) {
+        adjacencyList[user1].push_back(user2);
+        adjacencyList[user2].push_back(user1); // Assuming undirected graph
+    }
+
+    vector<int> getConnections(int user_id) {
+        return adjacencyList[user_id];
+    }
+};
+
+// Stack class for displaying user connections
+class Stack {
+private:
+    vector<int> stack;
+
+public:
+    void push(int value) {
+        stack.push_back(value);
+    }
+
+    int pop() {
+        if (stack.empty()) {
+            throw runtime_error("Stack underflow!");
+        }
+        int value = stack.back();
+        stack.pop_back();
+        return value;
+    }
+
+    bool isEmpty() const {
+        return stack.empty();
+    }
+};
+
 class HashMap {
 private:
     struct Node {
@@ -81,6 +125,7 @@ public:
 int main() {
     HashMap userMap;
     int userIDCounter = 1;
+    Graph userGraph(100); // Graph to represent relationships
     string username, password;
     int userType;
 
@@ -125,6 +170,17 @@ int main() {
         cout << "Invalid selection! Please restart the program and choose 0 or 1." << endl;
     }
 
+    // Add relationships to the graph
+    char addRelation = 'y';
+    while (addRelation == 'y' || addRelation == 'Y') {
+        int user1, user2;
+        cout << "Enter two user IDs to create a relationship (user1 user2): ";
+        cin >> user1 >> user2;
+        userGraph.addEdge(user1, user2);
+        cout << "Do you want to add another relationship? (y/n): ";
+        cin >> addRelation;
+    }
+
     int userIDToSearch;
     cout << "Enter user ID to fetch details: ";
     cin >> userIDToSearch;
@@ -140,6 +196,19 @@ int main() {
             cout << videoID << " ";
         }
         cout << endl;
+
+        // Display connections using stack
+        Stack userStack;
+        vector<int> connections = userGraph.getConnections(fetchedUser->user_id);
+        cout << "Connections: ";
+        for (int conn : connections) {
+            userStack.push(conn);
+        }
+        while (!userStack.isEmpty()) {
+            cout << userStack.pop() << " ";
+        }
+        cout << endl;
+
     } else {
         cout << "User not found!" << endl;
     }
