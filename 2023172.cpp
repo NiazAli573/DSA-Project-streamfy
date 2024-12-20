@@ -57,65 +57,79 @@ struct VideoNode {
     VideoNode(const string& name, const string& path) : videoName(name), videoPath(path), next(nullptr) {}
 };
 
-class Playlist {
+// Linked List Implementation
+class FilePathNode {
 public:
-    VideoNode* head;
+    std::string data;
+    FilePathNode* next;
 
-    Playlist() : head(nullptr) {}
+    FilePathNode(const std::string& path) : data(path), next(nullptr) {}
+};
 
-    void addVideo(const string& name, const string& path) {
-        VideoNode* newNode = new VideoNode(name, path);
-        if (!head) {
-            head = newNode;
-        } else {
-            VideoNode* temp = head;
-            while (temp->next) temp = temp->next;
-            temp->next = newNode;
-        }
-        cout << "Video added to playlist: " << name << "\n";
+class FilePathList {
+private:
+    FilePathNode* head;
+
+public:
+    FilePathList() : head(nullptr) {}
+
+    void addPath(const std::string& path) {
+        FilePathNode* newNode = new FilePathNode(path);
+        newNode->next = head;
+        head = newNode;
     }
 
-    void displayPlaylist() {
-        if (!head) {
-            cout << "Playlist is empty!\n";
-            return;
-        }
-        VideoNode* temp = head;
-        int index = 1;
-        while (temp) {
-            cout << index++ << ". " << temp->videoName << "\n";
-            temp = temp->next;
+    void displayPaths() const {
+        FilePathNode* current = head;
+        while (current) {
+            std::cout << current->data << std::endl;
+            current = current->next;
         }
     }
 
-    VideoNode* getVideoAt(int position) {
-        VideoNode* temp = head;
-        int index = 1;
-        while (temp && index < position) {
-            temp = temp->next;
-            index++;
+    ~FilePathList() {
+        while (head) {
+            FilePathNode* temp = head;
+            head = head->next;
+            delete temp;
         }
-        return temp;
+    }
+};
+
+// Stack Implementation
+template <typename T>
+class Stack {
+private:
+    std::vector<T> elements;
+
+public:
+    void push(const T& item) {
+        elements.push_back(item);
+    }
+
+    void pop() {
+        if (!elements.empty()) {
+            elements.pop_back();
+        }
+    }
+
+    T top() const {
+        if (!elements.empty()) {
+            return elements.back();
+        }
+        throw std::out_of_range("Stack is empty");
+    }
+
+    bool isEmpty() const {
+        return elements.empty();
+    }
+
+    size_t size() const {
+        return elements.size();
     }
 };
 
 
-Stack videoHistory;
-
-void playVideo(const string& videoPath) {
-    cout << "Playing: " << videoPath << "\n";
-    system(("start wmplayer \"" + videoPath + "\"").c_str());
-}
-
-void backNavigation() {
-    if (!videoHistory.isEmpty()) {
-        string lastVideo = videoHistory.peek();
-        videoHistory.pop();
-        playVideo(lastVideo);
-    } else {
-        cout << "No videos in history!\n";
-    }
-}
 
 int main() {
     Playlist playlist;
