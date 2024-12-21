@@ -5,65 +5,103 @@
 using namespace std;
 
 
-// Linked List Node for file paths
-struct FilePathNode
-{
-    string filePath;
-    FilePathNode *next;
 
-    FilePathNode(string path) : filePath(path), next(nullptr) {}
-};
-
-// Linked List for managing file paths
-class FilePathList
+template <typename K, typename V>
+class HashMap
 {
 private:
-    FilePathNode *head;
-public:
-
-    FilePathList() : head(nullptr) {}
-
-    void addFilePath(const string &path)
+    static const int TABLE_SIZE = 100;
+    struct HashNode
     {
-        FilePathNode *newNode = new FilePathNode(path);
-        newNode->next = head;
-        head = newNode;
+        K key;
+        V value;
+        HashNode *next;
+
+        HashNode(K k, V v) : key(k), value(v), next(nullptr) {}
+    };
+    HashNode *table[TABLE_SIZE];
+
+    int hashFunction(const K &key) const
+    {
+        return std::hash<K>{}(key) % TABLE_SIZE;
     }
 
-    void displayFilePaths() const
+public:
+    HashMap()
     {
-        if (!head)
+        for (int i = 0; i < TABLE_SIZE; ++i)
         {
-            cout << "No file paths available.\n";
-            return;
+            table[i] = nullptr;
         }
-        cout << "File Paths:\n";
-        FilePathNode *current = head;
+    }
+
+    ~HashMap()
+    {
+        for (int i = 0; i < TABLE_SIZE; ++i)
+        {
+            HashNode *current = table[i];
+            while (current)
+            {
+                HashNode *temp = current;
+                current = current->next;
+                delete temp;
+            }
+        }
+    }
+
+    void insert(const K &key, const V &value)
+    {
+        int hashIndex = hashFunction(key);
+        HashNode *newNode = new HashNode(key, value);
+        if (!table[hashIndex])
+        {
+            table[hashIndex] = newNode;
+        }
+        else
+        {
+            HashNode *current = table[hashIndex];
+            while (current->next)
+            {
+                if (current->key == key)
+                {
+                    current->value = value; // Update existing key
+                    delete newNode;
+                    return;
+                }
+                current = current->next;
+            }
+            current->next = newNode;
+        }
+    }
+
+    bool find(const K &key, V &value) const
+    {
+        int hashIndex = hashFunction(key);
+        HashNode *current = table[hashIndex];
         while (current)
         {
-            cout << "- " << current->filePath << "\n";
+            if (current->key == key)
+            {
+                value = current->value;
+                return true;
+            }
             current = current->next;
         }
+        return false;
     }
 
-    string search(int number){
-        if(!head){
-            cout << "No file paths available.\n";
-            return "NULL";
-        }
-        int i=1;
-        while(head){
-            if(i==number){
-                return head->filePath;
+    void iterate(function<void(const K &, const V &)> callback) const
+    {
+        for (int i = 0; i < TABLE_SIZE; ++i)
+        {
+            HashNode *current = table[i];
+            while (current)
+            {
+                callback(current->key, current->value);
+                current = current->next;
             }
-            
-            head=head->next;
-            ++i;
         }
-       return "NULL";
     }
-
-   
 };
 
 // AVL Tree Node
@@ -225,58 +263,118 @@ void playVideo(const string &videoPath) {
     system(command.c_str());
 }
 
-class Creator {
+class Creator
+{
 private:
+    HashMap<string, Video> &videoLibrary;
     AVLTree &categoryTree;
 
 public:
-    Creator(AVLTree &ct) : categoryTree(ct) {}
+    Creator(HashMap<string, Video> &vl,AVLTree &ct) : videoLibrary(vl), categoryTree(ct) {}
 
-    void addCategory(const string &category) {
-        categoryTree.addCategory(category);
-        cout << "Category added: " << category << "\n";
+    void uploadVideo(const string &title, const string &filePath)
+    {
+        Video tempVideo(title, filePath);
+        videoLibrary.insert(title, tempVideo);
+        cout << "Video uploaded successfully.\n";
     }
 
-    void uploadVideosToCategory(const string &category, const string &folderPath) {
-        AVLNode *node = categoryTree.getCategoryNode(category);
-        if (!node) {
-            cout << "Category not found: " << category << "\n";
-            return;
+    void viewVideos() const
+    {
+        bool hasVideos = false;
+        videoLibrary.iterate([&hasVideos](const string &title, const Video &video)
+                             {
+            if (!hasVideos) {
+                cout << "Uploaded Videos:\n";
+                hasVideos = true;
+            }
+            cout << "- " << title << " (Likes: " << video.likes << ")\n"; });
+        if (!hasVideos)
+        {
+            cout << "No videos uploaded yet.\n";
         }
+    }
 
-        vector<string> videos;
+    void uploadVideo(const std::string &folderPath)
+    {
+        std::vector<std::string> videos;
         listVideos(folderPath, videos);
 
-        if (videos.empty()) {
-            cout << "No videos found in the specified folder.\n";
+        if (videos.empty())
+        {
+            std::cout << "No videos found in the specified folder.\n";
             return;
         }
 
-        cout << "Videos available for upload:\n";
-        for (size_t i = 0; i < videos.size(); ++i) {
-            cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
+        std::cout << "Videos available for upload:\n";
+        for (size_t i = 0; i < videos.size(); ++i)
+        {
+            std::cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
         }
 
         int choice;
-        cout << "Enter the number of the video you want to upload: ";
-        cin >> choice;
+        std::cout << "Enter the number of the video you want to upload: ";
+        std::cin >> choice;
 
-        if (choice >= 1 && choice <= static_cast<int>(videos.size())) {
-            node->filePathList.addFilePath(videos[choice - 1]);
-            cout << "Video added to category '" << category << "'.\n";
-        } else {
-            cout << "Invalid choice.\n";
+        if (choice >= 1 && choice <= static_cast<int>(videos.size()))
+        {
+            std::string title = videos[choice - 1].substr(videos[choice - 1].find_last_of("\\") + 1);
+            videoLibrary.insert(title, Video(title, videos[choice - 1]));
+            std::cout << "Video uploaded successfully: " << title << "\n";
+        }
+        else
+        {
+            std::cout << "Invalid choice.\n";
         }
     }
-     void viewCategoryVideos() const {
-        cout << "Enter category name to view videos: ";
-        string category;
-        cin.ignore();
-        getline(cin, category);
+
+    void addCategory(const std::string &category) {
+        categoryTree.addCategory(category);
+        std::cout << "Category added: " << category << "\n";
+    }
+
+    void uploadVideosToCategory(const std::string &category, const std::string &folderPath) {
+        AVLNode *node = categoryTree.getCategoryNode(category);
+        if (!node) {
+            std::cout << "Category not found: " << category << "\n";
+            return;
+        }
+
+        std::vector<std::string> videos;
+        listVideos(folderPath, videos);
+
+        if (videos.empty()) {
+            std::cout << "No videos found in the specified folder.\n";
+            return;
+        }
+
+        std::cout << "Videos available for upload:\n";
+        for (size_t i = 0; i < videos.size(); ++i) {
+            std::cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
+        }
+
+        int choice;
+        std::cout << "Enter the number of the video you want to upload: ";
+        std::cin >> choice;
+
+        if (choice >= 1 && choice <= static_cast<int>(videos.size())) {
+           
+            node->filePathList.addFilePath(videos[choice - 1]);
+            std::cout << "Video added to category '" << category << "'.\n";
+        } else {
+            std::cout << "Invalid choice.\n";
+        }
+}
+
+    void viewCategoryVideos() const {
+        std::cout << "Enter category name to view videos: ";
+        std::string category;
+        std::cin.ignore();
+        std::getline(std::cin, category);
 
         AVLNode *node = categoryTree.getCategoryNode(category);
         if (node) {
-            cout << "Videos in category '" << category << "':\n";
+            std::cout << "Videos in category '" << category << "':\n";
             node->filePathList.displayFilePaths();
             cout<<"Enter the number of video you want to watch:"<<endl;
             int choice;
@@ -290,17 +388,17 @@ public:
             }
 
         } else {
-            cout << "Category not found.\n";
+            std::cout << "Category not found.\n";
         }
     }
-
-    
 };
+
 
     int main() {
     AVLTree categoryTree;
-    Creator creator(categoryTree);
-
+     HashMap<string, Video> videoLibrary;
+    Creator creator(videoLibrary,categoryTree);
+    
     while (true) {
         cout << "\nVideo Organizer\n";
         cout << "1. Add Category\n";
