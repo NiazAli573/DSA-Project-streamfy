@@ -130,6 +130,136 @@ public:
 };
 
 
+class Creator
+{
+private:
+    HashMap<string, Video> &videoLibrary;
+    AVLTree &categoryTree;
+
+public:
+    Creator(HashMap<string, Video> &vl,AVLTree &ct) : videoLibrary(vl), categoryTree(ct) {}
+
+    void uploadVideo(const string &title, const string &filePath)
+    {
+        Video tempVideo(title, filePath);
+        videoLibrary.insert(title, tempVideo);
+        cout << "Video uploaded successfully.\n";
+    }
+
+    void viewVideos() const
+    {
+        bool hasVideos = false;
+        videoLibrary.iterate([&hasVideos](const string &title, const Video &video)
+                             {
+            if (!hasVideos) {
+                cout << "Uploaded Videos:\n";
+                hasVideos = true;
+            }
+            cout << "- " << title << " (Likes: " << video.likes << ")\n"; });
+        if (!hasVideos)
+        {
+            cout << "No videos uploaded yet.\n";
+        }
+    }
+
+    void uploadVideo(const string &folderPath)
+    {
+        vector<string> videos;
+        listVideos(folderPath, videos);
+
+        if (videos.empty())
+        {
+            cout << "No videos found in the specified folder.\n";
+            return;
+        }
+
+        cout << "Videos available for upload:\n";
+        for (size_t i = 0; i < videos.size(); ++i)
+        {
+            cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
+        }
+
+        int choice;
+        cout << "Enter the number of the video you want to upload: ";
+        cin >> choice;
+
+        if (choice >= 1 && choice <= static_cast<int>(videos.size()))
+        {
+            string title = videos[choice - 1].substr(videos[choice - 1].find_last_of("\\") + 1);
+            videoLibrary.insert(title, Video(title, videos[choice - 1]));
+            cout << "Video uploaded successfully: " << title << "\n";
+        }
+        else
+        {
+            cout << "Invalid choice.\n";
+        }
+    }
+
+    void addCategory(const string &category) {
+        categoryTree.addCategory(category);
+        cout << "Category added: " << category << "\n";
+    }
+
+    void uploadVideosToCategory(const string &category, const string &folderPath) {
+        AVLNode *node = categoryTree.getCategoryNode(category);
+        if (!node) {
+            cout << "Category not found: " << category << "\n";
+            return;
+        }
+
+        vector<string> videos;
+        listVideos(folderPath, videos);
+
+        if (videos.empty()) {
+            cout << "No videos found in the specified folder.\n";
+            return;
+        }
+
+        cout << "Videos available for upload:\n";
+        for (size_t i = 0; i < videos.size(); ++i) {
+            cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
+        }
+
+        int choice;
+        cout << "Enter the number of the video you want to upload: ";
+        cin >> choice;
+
+        if (choice >= 1 && choice <= static_cast<int>(videos.size())) {
+           
+            node->filePathList.addFilePath(videos[choice - 1]);
+            cout << "Video added to category '" << category << "'.\n";
+        } else {
+            cout << "Invalid choice.\n";
+        }
+}
+
+    void viewCategoryVideos() const {
+        cout << "Enter category name to view videos: ";
+        string category;
+        cin.ignore();
+        getline(cin, category);
+
+        AVLNode *node = categoryTree.getCategoryNode(category);
+        if (node) {
+            cout << "Videos in category '" << category << "':\n";
+            node->filePathList.displayFilePaths();
+            cout<<"Enter the number of video you want to watch:"<<endl;
+            int choice;
+            cin>>choice;
+            cin.ignore();
+            string file=node->filePathList.search(choice);
+            if(file!="NULL"){
+            playVideo(file);
+            } else{
+                cout<<"File not found"<<endl;
+            }
+
+        } else {
+            cout << "Category not found.\n";
+        }
+    }
+};
+
 
 int main() {
     Playlist playlist;
