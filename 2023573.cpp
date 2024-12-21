@@ -1,60 +1,159 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
+#include <stdexcept>
 
-class Video {
+using namespace std;
+
+ Video and Queue Implementations
+
+// Video class definition
+class Video
+{
 public:
-    std::string title;
-    int creatorID;
-    std::string filePath;
-
-    Video(std::string t, int cid, std::string fp)
-        : title(t), creatorID(cid), filePath(fp) {}
-};
-struct Video {
     string title;
     string filePath;
+    int likes;
+    vector<string> comments;
+
+    Video() : likes(0) {}
+
+    Video(string title, string filePath) : title(title), filePath(filePath), likes(0) {}
+
+    void addComment(const string &comment)
+    {
+        comments.push_back(comment);
+    }
+
+    void displayComments() const
+    {
+        if (comments.empty())
+        {
+            cout << "No comments yet.\n";
+            return;
+        }
+        cout << "Comments:\n";
+        for (const auto &comment : comments)
+        {
+            cout << "- " << comment << "\n";
+        }
+    }
 };
 
+// Custom Queue Implementation
+template <typename T>
+class Queue
+{
+private:
+    vector<T> elements;
 
-
-int main() {
-    std::vector<Video> videos;
-    videos.push_back(Video("Sample Video", 123, "path/to/video.mp4"));
-    videos.push_back(Video("Another Video", 124, "path/to/another_video.mp4"));
-
-    // Display the video metadata
-    for (const auto& video : videos) {
-        std::cout << "Title: " << video.title
-                  << ", Creator ID: " << video.creatorID
-                  << ", File Path: " << video.filePath << std::endl;
+public:
+    void enqueue(T value)
+    {
+        elements.push_back(value);
     }
 
-queue<Video> playbackQueue;
-
-    // Example: Adding videos to playback queue
-    playbackQueue.push({"Introduction to C++", "C:\\Videos\\intro_cpp.mp4"});
-    playbackQueue.push({"Binary Search Trees", "C:\\Videos\\bst_tutorial.mp4"});
-
-    // Playback simulation
-    cout << "Starting Video Playback:\n";
-    while (!playbackQueue.empty()) {
-        Video currentVideo = playbackQueue.front();
-        cout << "Now Playing: " << currentVideo.title << endl;
-
-        // Simulate playing the video using system call
-#ifdef _WIN32
-        string command = "start \"\" \"" + currentVideo.filePath + "\"";
-#else
-        string command = "xdg-open \"" + currentVideo.filePath + "\"";
-#endif
-        system(command.c_str());
-
-        playbackQueue.pop();
+    void dequeue()
+    {
+        if (!elements.empty())
+        {
+            elements.erase(elements.begin());
+        }
+        else
+        {
+            cout << "Queue is empty.\n";
+        }
     }
 
-    cout << "Playback Completed!\n";
+    T front()
+    {
+        if (!elements.empty())
+        {
+            return elements.front();
+        }
+        throw runtime_error("Queue is empty.");
+    }
+
+    bool empty()
+    {
+        return elements.empty();
+    }
+
+    void display()
+    {
+        if (elements.empty())
+        {
+            cout << "Playlist is empty.\n";
+            return;
+        }
+        cout << "Playlist:\n";
+        for (const auto &element : elements)
+        {
+            cout << "- " << element << "\n";
+        }
+    }
+};
+
+// Simulating a basic HashMap with iteration capability
+class HashMap
+{
+private:
+    unordered_map<string, Video> map;
+
+public:
+    void add(const string &key, const Video &value)
+    {
+        map[key] = value;
+    }
+
+    bool find(const string &key, Video &value)
+    {
+        auto it = map.find(key);
+        if (it != map.end())
+        {
+            value = it->second;
+            return true;
+        }
+        return false;
+    }
+
+    template <typename Func>
+    void iterate(Func func)
+    {
+        for (auto &pair : map)
+        {
+            func(pair.first, pair.second);
+        }
+    }
+};
+int main_video()
+{
+    // Video v("Sample Video", "path/to/video.mp4");
+    // v.addComment("Great video!");
+    // v.addComment("Very informative.");
+
+    // cout << "Video: " << v.title << "\n";
+    // cout << "Path: " << v.filePath << "\n";
+    // cout << "Likes: " << v.likes << "\n";
+    // v.displayComments();
+
+  // Queue<string> q;
+  //   q.enqueue("Video 1");
+  //   q.enqueue("Video 2");
+  //   q.enqueue("Video 3");
+
+  //   q.display();
+
+  //   q.dequeue();
+  //   cout << "After dequeue:\n";
+  //   q.display();
+
+
+    return 0;
+    
+
+
 
     
-    return 0;
 }
