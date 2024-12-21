@@ -1,217 +1,354 @@
 #include <iostream>
 #include <vector>
-#include <string>
+#include <windows.h>
+
 using namespace std;
 
-class UserProfile {
-public:
-    int user_id;
-    string name;
-    string password;
-    string role;
-    vector<int> liked_videos;
 
-    UserProfile(int id, const string& name, const string& password, const string& role)
-        : user_id(id), name(name), password(password), role(role) {}
+// Linked List Node for file paths
+struct FilePathNode
+{
+    string filePath;
+    FilePathNode *next;
 
-    void likeVideo(int video_id) {
-        liked_videos.push_back(video_id);
-    }
+    FilePathNode(string path) : filePath(path), next(nullptr) {}
 };
 
-// Graph class to represent relationships between users
-class Graph {
+// Linked List for managing file paths
+class FilePathList
+{
 private:
-    vector<vector<int>> adjacencyList;
-
+    FilePathNode *head;
 public:
-    Graph(int size) {
-        adjacencyList.resize(size);
+
+    FilePathList() : head(nullptr) {}
+
+    void addFilePath(const string &path)
+    {
+        FilePathNode *newNode = new FilePathNode(path);
+        newNode->next = head;
+        head = newNode;
     }
 
-    void addEdge(int user1, int user2) {
-        adjacencyList[user1].push_back(user2);
-        adjacencyList[user2].push_back(user1); // Assuming undirected graph
-    }
-
-    vector<int> getConnections(int user_id) {
-        return adjacencyList[user_id];
-    }
-};
-
-// Stack class for displaying user connections
-class Stack {
-private:
-    vector<int> stack;
-
-public:
-    void push(int value) {
-        stack.push_back(value);
-    }
-
-    int pop() {
-        if (stack.empty()) {
-            throw runtime_error("Stack underflow!");
+    void displayFilePaths() const
+    {
+        if (!head)
+        {
+            cout << "No file paths available.\n";
+            return;
         }
-        int value = stack.back();
-        stack.pop_back();
-        return value;
+        cout << "File Paths:\n";
+        FilePathNode *current = head;
+        while (current)
+        {
+            cout << "- " << current->filePath << "\n";
+            current = current->next;
+        }
     }
 
-    bool isEmpty() const {
-        return stack.empty();
+    string search(int number){
+        if(!head){
+            cout << "No file paths available.\n";
+            return "NULL";
+        }
+        int i=1;
+        while(head){
+            if(i==number){
+                return head->filePath;
+            }
+            
+            head=head->next;
+            ++i;
+        }
+       return "NULL";
     }
+
+   
 };
 
-class HashMap {
+// AVL Tree Node
+struct AVLNode {
+
+    string category;
+    FilePathList filePathList;
+    AVLNode *left;
+    AVLNode *right;
+    int height;
+
+    AVLNode(const string &cat) : category(cat), left(nullptr), right(nullptr), height(1) {}
+};
+
+// AVL Tree for managing categories
+class AVLTree {
 private:
-    struct Node {
-        int key;
-        UserProfile value;
-        Node* next;
-    };
-    Node** table;
-    int capacity;
+    AVLNode *root;
+
+    int getHeight(AVLNode *node) const {
+        return node ? node->height : 0;
+    }
+
+    int getBalance(AVLNode *node) const {
+        return node ? getHeight(node->left) - getHeight(node->right) : 0;
+    }
+
+    AVLNode *rotateRight(AVLNode *y) {
+        AVLNode *x = y->left;
+        AVLNode *T2 = x->right;
+
+        // Perform rotation
+        x->right = y;
+        y->left = T2;
+
+        // Update heights
+        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+
+        return x;
+    }
+
+    AVLNode *rotateLeft(AVLNode *x) {
+        AVLNode *y = x->right;
+        AVLNode *T2 = y->left;
+
+        // Perform rotation
+        y->left = x;
+        x->right = T2;
+
+        // Update heights
+        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+
+        return y;
+    }
+
+    AVLNode *insert(AVLNode *node, const string &category) {
+        if (!node)
+            return new AVLNode(category);
+
+        if (category < node->category)
+            node->left = insert(node->left, category);
+        else if (category > node->category)
+            node->right = insert(node->right, category);
+        else
+            return node; // Duplicate categories not allowed
+
+        // Update height
+        node->height = 1 + max(getHeight(node->left), getHeight(node->right));
+
+        // Check balance
+        int balance = getBalance(node);
+
+        // Balance the tree
+        if (balance > 1 && category < node->left->category)
+            return rotateRight(node);
+        if (balance < -1 && category > node->right->category)
+            return rotateLeft(node);
+        if (balance > 1 && category > node->left->category) {
+            node->left = rotateLeft(node->left);
+            return rotateRight(node);
+        }
+        if (balance < -1 && category < node->right->category) {
+            node->right = rotateRight(node->right);
+            return rotateLeft(node);
+        }
+
+        return node;
+    }
+
+    void inorder(AVLNode *node) const {
+        if (!node)
+            return;
+        inorder(node->left);
+        cout << "Category: " << node->category << "\n";
+        node->filePathList.displayFilePaths();
+        inorder(node->right);
+    }
+
+    AVLNode *find(AVLNode *node, const string &category) {
+        if (!node || node->category == category)
+            return node;
+        if (category < node->category)
+            return find(node->left, category);
+        return find(node->right, category);
+    }
 
 public:
-    HashMap(int cap = 100) : capacity(cap) {
-        table = new Node*[capacity]();
+    AVLTree() : root(nullptr) {}
+
+    void addCategory(const string &category) {
+        root = insert(root, category);
+        cout << "Category added: " << category << "\n";
     }
 
-    int hash(int key) {
-        return key % capacity;
-    }
-
-    void insert(int user_id, const UserProfile& user) {
-        int index = hash(user_id);
-        Node* newNode = new Node{user_id, user, nullptr};
-
-        if (table[index] == nullptr) {
-            table[index] = newNode;
+    void addFilePathToCategory(const string &category, const string &filePath) {
+        AVLNode *node = find(root, category);
+        if (node) {
+            node->filePathList.addFilePath(filePath);
         } else {
-            Node* temp = table[index];
-            while (temp->next != nullptr) {
-                temp = temp->next;
-            }
-            temp->next = newNode;
+            cout << "Category not found: " << category << "\n";
         }
     }
 
-    UserProfile* get(int user_id) {
-        int index = hash(user_id);
-        Node* temp = table[index];
-        while (temp != nullptr) {
-            if (temp->key == user_id) {
-                return &temp->value;
-            }
-            temp = temp->next;
-        }
-        return nullptr;
+    AVLNode *getCategoryNode(const string &category) {
+        return find(root, category);
     }
 
-    ~HashMap() {
-        for (int i = 0; i < capacity; i++) {
-            Node* current = table[i];
-            while (current != nullptr) {
-                Node* toDelete = current;
-                current = current->next;
-                delete toDelete;
-            }
-        }
-        delete[] table;
-    }
+    
 };
 
-int main() {
-    HashMap userMap;
-    int userIDCounter = 1;
-    Graph userGraph(100); // Graph to represent relationships
-    string username, password;
-    int userType;
 
-    cout << "Select user type: \n0 for Creator\n1 for User\nEnter your choice: ";
-    cin >> userType;
+void listVideos(const string &folderPath, vector<string> &videos) {
+    string searchPath = folderPath + "\\*";
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = FindFirstFile(searchPath.c_str(), &findFileData);
 
-    if (userType == 0) {
-        string creatorPassword = "Mehdi";
-        cout << "Enter Creator Name: ";
-        cin >> username;
-        cout << "Enter Password: ";
-        cin >> password;
+    if (hFind == INVALID_HANDLE_VALUE) {
+        cout << "Failed to open folder.\n";
+        return;
+    }
 
-        if (password == creatorPassword) {
-            UserProfile creator(userIDCounter++, username, password, "creator");
-            userMap.insert(creator.user_id, creator);
-            cout << "Creator profile created successfully!" << endl;
+    do {
+        string fileName = findFileData.cFileName;
+        if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            string extension = fileName.substr(fileName.find_last_of(".") + 1);
+            if (extension == "mp4" || extension == "mkv" || extension == "avi" || extension == "wmv") {
+                videos.push_back(folderPath + "\\" + fileName);
+            }
+        }
+    } while (FindNextFile(hFind, &findFileData));
+
+    FindClose(hFind);
+}
+
+void playVideo(const string &videoPath) {
+    string command = "start wmplayer \"" + videoPath + "\"";
+    system(command.c_str());
+}
+
+class Creator {
+private:
+    AVLTree &categoryTree;
+
+public:
+    Creator(AVLTree &ct) : categoryTree(ct) {}
+
+    void addCategory(const string &category) {
+        categoryTree.addCategory(category);
+        cout << "Category added: " << category << "\n";
+    }
+
+    void uploadVideosToCategory(const string &category, const string &folderPath) {
+        AVLNode *node = categoryTree.getCategoryNode(category);
+        if (!node) {
+            cout << "Category not found: " << category << "\n";
+            return;
+        }
+
+        vector<string> videos;
+        listVideos(folderPath, videos);
+
+        if (videos.empty()) {
+            cout << "No videos found in the specified folder.\n";
+            return;
+        }
+
+        cout << "Videos available for upload:\n";
+        for (size_t i = 0; i < videos.size(); ++i) {
+            cout << i + 1 << ". " << videos[i].substr(videos[i].find_last_of("\\") + 1) << "\n";
+        }
+
+        int choice;
+        cout << "Enter the number of the video you want to upload: ";
+        cin >> choice;
+
+        if (choice >= 1 && choice <= static_cast<int>(videos.size())) {
+            node->filePathList.addFilePath(videos[choice - 1]);
+            cout << "Video added to category '" << category << "'.\n";
         } else {
-            cout << "Incorrect password for creator!" << endl;
+            cout << "Invalid choice.\n";
         }
-    } else if (userType == 1) {
-        cout << "Enter User Name: ";
-        cin >> username;
-        cout << "Enter Password: ";
-        cin >> password;
+    }
+     void viewCategoryVideos() const {
+        cout << "Enter category name to view videos: ";
+        string category;
+        cin.ignore();
+        getline(cin, category);
 
-        UserProfile user(userIDCounter++, username, password, "user");
+        AVLNode *node = categoryTree.getCategoryNode(category);
+        if (node) {
+            cout << "Videos in category '" << category << "':\n";
+            node->filePathList.displayFilePaths();
+            cout<<"Enter the number of video you want to watch:"<<endl;
+            int choice;
+            cin>>choice;
+            cin.ignore();
+            string file=node->filePathList.search(choice);
+            if(file!="NULL"){
+            playVideo(file);
+            } else{
+                cout<<"File not found"<<endl;
+            }
 
-        int likedVideoID;
-        char anotherVideo = 'y';
-        while (anotherVideo == 'y' || anotherVideo == 'Y') {
-            cout << "Enter the video ID you want to like (1 for Video 1, 2 for Video 2, etc.): ";
-            cin >> likedVideoID;
-            user.likeVideo(likedVideoID);
-            cout << "Do you want to like another video? (y/n): ";
-            cin >> anotherVideo;
+        } else {
+            cout << "Category not found.\n";
         }
-
-        userMap.insert(user.user_id, user);
-        cout << "User profile created successfully!" << endl;
-    } else {
-        cout << "Invalid selection! Please restart the program and choose 0 or 1." << endl;
     }
 
-    // Add relationships to the graph
-    char addRelation = 'y';
-    while (addRelation == 'y' || addRelation == 'Y') {
-        int user1, user2;
-        cout << "Enter two user IDs to create a relationship (user1 user2): ";
-        cin >> user1 >> user2;
-        userGraph.addEdge(user1, user2);
-        cout << "Do you want to add another relationship? (y/n): ";
-        cin >> addRelation;
+    
+};
+
+    int main() {
+    AVLTree categoryTree;
+    Creator creator(categoryTree);
+
+    while (true) {
+        cout << "\nVideo Organizer\n";
+        cout << "1. Add Category\n";
+        cout << "2. Upload Videos to Category\n";
+        cout<<  "3. Display by category\n"<<endl;
+        cout << "4. Exit\n";
+        cout << "Choose an option: ";
+
+        int choice;
+        cin >> choice;
+        cin.ignore(); 
+switch (choice) {
+    case 1: {
+        cout << "Enter category name: ";
+        cin.ignore(); 
+        string category;
+        getline(cin, category);
+        creator.addCategory(category);
+        break;
     }
+    case 2: {
+        cout << "Enter category name: ";
+        cin.ignore(); 
+        string category;
+        getline(cin, category);
 
-    int userIDToSearch;
-    cout << "Enter user ID to fetch details: ";
-    cin >> userIDToSearch;
+        cout << "Enter folder path to upload videos: ";
+        string folderPath;
+        getline(cin, folderPath);
 
-    UserProfile* fetchedUser = userMap.get(userIDToSearch);
-    if (fetchedUser != nullptr) {
-        cout << "User Found!" << endl;
-        cout << "User ID: " << fetchedUser->user_id << endl;
-        cout << "Name: " << fetchedUser->name << endl;
-        cout << "Role: " << fetchedUser->role << endl;
-        cout << "Liked Videos: ";
-        for (int videoID : fetchedUser->liked_videos) {
-            cout << videoID << " ";
-        }
-        cout << endl;
+        creator.uploadVideosToCategory(category, folderPath);
+        break;
+    }
+    case 3: {
+        creator.viewCategoryVideos();
+        break;
+    }
+    case 4: {
+        cout << "Exiting the platform. Goodbye!\n";
+        return 0;
+    }
+    default:
+        cout << "Invalid choice. Please try again.\n";
+}
 
-        // Display connections using stack
-        Stack userStack;
-        vector<int> connections = userGraph.getConnections(fetchedUser->user_id);
-        cout << "Connections: ";
-        for (int conn : connections) {
-            userStack.push(conn);
-        }
-        while (!userStack.isEmpty()) {
-            cout << userStack.pop() << " ";
-        }
-        cout << endl;
-
-    } else {
-        cout << "User not found!" << endl;
     }
 
     return 0;
+
+
 }
