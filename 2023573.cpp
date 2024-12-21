@@ -127,7 +127,97 @@ public:
         }
     }
 };
-int main_video()
+ User Class and Integration
+
+// User class
+class User
+{
+private:
+    HashMap &videoLibrary;
+    vector<string> watchHistory;
+    Queue<string> playlist;
+
+public:
+    User(HashMap &vl) : videoLibrary(vl) {}
+
+    void watchVideo(const string &title)
+    {
+        Video video;
+        if (!videoLibrary.find(title, video))
+        {
+            cout << "Video not found.\n";
+            return;
+        }
+
+        cout << "Now watching: " << title << "\n";
+        watchHistory.push_back(title);
+
+        string choice;
+        cout << "Would you like to comment on this video? (yes/no): ";
+        cin >> choice;
+        if (choice == "yes")
+        {
+            string comment;
+            cout << "Enter your comment: ";
+            cin.ignore();
+            getline(cin, comment);
+            video.addComment(comment);
+            cout << "Comment added.\n";
+        }
+
+        cout << "Do you want to like this video? (yes/no): ";
+        cin >> choice;
+        if (choice == "yes")
+        {
+            video.likes++;
+            cout << "Video liked.\n";
+        }
+    }
+
+    void viewWatchHistory()
+    {
+        if (watchHistory.empty())
+        {
+            cout << "Watch history is empty.\n";
+            return;
+        }
+
+        cout << "Watch History:\n";
+        for (const auto &title : watchHistory)
+        {
+            cout << "- " << title << "\n";
+        }
+    }
+
+    void addToPlaylist(const string &title)
+    {
+        Video video;
+        if (!videoLibrary.find(title, video))
+        {
+            cout << "Video not found.\n";
+            return;
+        }
+        playlist.enqueue(title);
+        cout << "Added to playlist: " << title << "\n";
+    }
+
+    void playFromPlaylist()
+    {
+        if (playlist.empty())
+        {
+            cout << "Playlist is empty.\n";
+            return;
+        }
+        string title = playlist.front();
+        playlist.dequeue();
+        watchVideo(title);
+    }
+};
+
+// Main functions for testing Part 2
+
+
+int main()
 {
     // Video v("Sample Video", "path/to/video.mp4");
     // v.addComment("Great video!");
@@ -149,11 +239,9 @@ int main_video()
   //   cout << "After dequeue:\n";
   //   q.display();
 
+ 
+  
 
     return 0;
-    
-
-
-
     
 }
