@@ -6,7 +6,41 @@
 
 using namespace std;
 
- Video and Queue Implementations
+
+//user autentication machanism
+
+void signUp(unordered_map<string, string> &users) {
+    string username, password;
+    cout << "Enter username: ";
+    cin >> username;
+    if (users.find(username) != users.end()) {
+        cout << "Username already exists. Try again.\n";
+        return;
+    }
+    cout << "Enter password: ";
+    cin >> password;
+    users[username] = password;
+    cout << "Sign-up successful.\n";
+}
+
+bool logIn(unordered_map<string, string> &users, string &currentUser) {
+    string username, password;
+    cout << "Enter username: ";
+    cin >> username;
+    cout << "Enter password: ";
+    cin >> password;
+
+    if (users.find(username) != users.end() && users[username] == password) {
+        currentUser = username;
+        return true;
+    } else {
+        cout << "Invalid username or password.\n";
+        return false;
+    }
+}
+
+
+// Video and Queue Implementations
 
 // Video class definition
 class Video
@@ -219,6 +253,45 @@ public:
 
 int main()
 {
+
+unordered_map<string, string> users; // To store usernames and passwords
+    bool isAuthenticated = false;       // Authentication flag
+    string currentUser;                 // Stores the username of the logged-in user
+
+    while (!isAuthenticated)
+    {
+        int select;
+        cout << "\n=== User Authentication System ===\n";
+        cout << "1. Sign Up\n";
+        cout << "2. Log In\n";
+        cout << "3. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> select;
+
+        switch (select)
+        {
+        case 1:
+            signUp(users);
+            break;
+        case 2:
+            if (logIn(users, currentUser))
+            {
+                cout << "Login successful. Welcome, " << currentUser << "!\n";
+                isAuthenticated = true;
+            }
+            break;
+        case 3:
+            cout << "Exiting the program. Goodbye!\n";
+            return 0;
+        default:
+            cout << "Invalid choice. Please try again.\n";
+        }
+    }
+
+
+
+
+ 
     // Video v("Sample Video", "path/to/video.mp4");
     // v.addComment("Great video!");
     // v.addComment("Very informative.");
