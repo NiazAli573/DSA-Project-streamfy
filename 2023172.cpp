@@ -1,4 +1,6 @@
 #include <iostream>
+#include <filesystem>
+
 using namespace std;
 
 class Stack {
@@ -49,13 +51,6 @@ public:
     }
 };
 
-struct VideoNode {
-    string videoName;
-    string videoPath;
-    VideoNode* next;
-
-    VideoNode(const string& name, const string& path) : videoName(name), videoPath(path), next(nullptr) {}
-};
 
 // Linked List Implementation
 class FilePathNode {
@@ -66,66 +61,118 @@ public:
     FilePathNode(const std::string& path) : data(path), next(nullptr) {}
 };
 
-class FilePathList {
-private:
-    FilePathNode* head;
 
+struct FilePathNode
+{
+    string filePath;
+    FilePathNode *next;
+
+    FilePathNode(string path) : filePath(path), next(nullptr) {}
+};
+
+// Linked List for managing file paths
+class FilePathList
+{
+private:
+    FilePathNode *head;
 public:
+
     FilePathList() : head(nullptr) {}
 
-    void addPath(const std::string& path) {
-        FilePathNode* newNode = new FilePathNode(path);
+    void addFilePath(const string &path)
+    {
+        FilePathNode *newNode = new FilePathNode(path);
         newNode->next = head;
         head = newNode;
     }
 
-    void displayPaths() const {
-        FilePathNode* current = head;
-        while (current) {
-            std::cout << current->data << std::endl;
+    void displayFilePaths() const
+    {
+        if (!head)
+        {
+            cout << "No file paths available.\n";
+            return;
+        }
+        cout << "File Paths:\n";
+        FilePathNode *current = head;
+        while (current)
+        {
+            cout << "- " << current->filePath << "\n";
             current = current->next;
         }
     }
 
-    ~FilePathList() {
-        while (head) {
-            FilePathNode* temp = head;
-            head = head->next;
-            delete temp;
+    string search(int number){
+        if(!head){
+            cout << "No file paths available.\n";
+            return "NULL";
         }
+        int i=1;
+        while(head){
+            if(i==number){
+                return head->filePath;
+            }
+            
+            head=head->next;
+            ++i;
+        }
+       return "NULL";
     }
+
+   
 };
 
-// Stack Implementation
+
 template <typename T>
-class Stack {
+class Stack
+{
 private:
-    std::vector<T> elements;
+    vector<T> elements;
 
 public:
-    void push(const T& item) {
-        elements.push_back(item);
+    void push(T value)
+    {
+        elements.push_back(value);
     }
 
-    void pop() {
-        if (!elements.empty()) {
+    void pop()
+    {
+        if (!elements.empty())
+        {
             elements.pop_back();
         }
+        else
+        {
+            cout << "Stack is empty.\n";
+        }
     }
 
-    T top() const {
-        if (!elements.empty()) {
+    T top()
+    {
+        if (!elements.empty())
+        {
             return elements.back();
         }
-        throw std::out_of_range("Stack is empty");
+        throw runtime_error("Stack is empty.");
     }
 
-    bool isEmpty() const {
+    bool empty()
+    {
         return elements.empty();
     }
 
-    size_t size() const {
-        return elements.size();
+    void display()
+    {
+        if (elements.empty())
+        {
+            cout << "No videos watched yet.\n";
+            return;
+        }
+        cout << "Watch History:\n";
+        for (int i = elements.size() - 1; i >= 0; --i)
+        {
+            cout << "- " << elements[i] << "\n";
+        }
     }
 };
 
@@ -260,64 +307,69 @@ public:
     }
 };
 
+namespace fs = filesystem;
+
+// Simple graph structure
+struct Graph {
+    vector<pair<int, int>> edges;
+    vector<string> nodes;
+
+    void addNode(const string& node) {
+        nodes.push_back(node);
+    }
+
+    void addEdge(int from, int to) {
+        edges.emplace_back(from, to);
+    }
+
+    void displayGraph() {
+        for (const auto& edge : edges) {
+            cout << nodes[edge.first] << " -> " << nodes[edge.second] << endl;
+        }
+    }
+};
+
+// Main function
+void processFolder(const string& folderPath) {
+    Graph graph;
+    vector<string> titles;
+
+    // Collect titles from the folder
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file()) {
+            string title = entry.path().stem().string(); // getting the file from here
+            titles.push_back(title);
+            graph.addNode(title);
+        }
+    }
+
+    // Creating simple graph connections like connections of all videos present in the videos folder
+    for (size_t i = 0; i < titles.size() - 1; ++i) {
+        graph.addEdge(i, i + 1);
+    }
+
+    // Display the graph
+    graph.displayGraph();
+}
 
 int main() {
-    Playlist playlist;
-    int choice;
+    // Stack operations
+    Stack<string> watchHistory;
+    watchHistory.push("Video1.mp4");
+    watchHistory.push("Video2.mp4");
+    watchHistory.display();
+    watchHistory.pop();
+    watchHistory.display();
 
-    do {
-        cout << "\nVideo Player Menu:\n";
-        cout << "1. Add Video to Playlist\n";
-        cout << "2. View Playlist\n";
-        cout << "3. Play Video from Playlist\n";
-        cout << "4. Back to Previous Video\n";
-        cout << "5. Exit\n";
-        cout << "Enter your choice: ";
-        cin >> choice;
+    // FilePathList operations
+    FilePathList filePathList;
+    filePathList.addFilePath("C:/Videos/Video1.mp4");
+    filePathList.addFilePath("C:/Videos/Video2.mp4");
+    filePathList.displayFilePaths();
 
-        switch (choice) {
-            case 1: {
-                cin.ignore(); 
-                string name, path;
-                cout << "Enter video name: ";
-                getline(cin, name);
-                cout << "Enter video path: ";
-                getline(cin, path);
-                playlist.addVideo(name, path);
-                break;
-            }
-            case 2: {
-                cout << "Playlist:\n";
-                playlist.displayPlaylist();
-                break;
-            }
-            case 3: {
-                int videoNumber;
-                cout << "Enter video number to play: ";
-                cin >> videoNumber;
-                VideoNode* selectedVideo = playlist.getVideoAt(videoNumber);
-                if (selectedVideo) {
-                    videoHistory.push(selectedVideo->videoPath);
-                    playVideo(selectedVideo->videoPath);
-                } else {
-                    cout << "Invalid video number!\n";
-                }
-                break;
-            }
-            case 4: {
-                backNavigation();
-                break;
-            }
-            case 5: {
-                cout << "Exiting...\n";
-                break;
-            }
-            default: {
-                cout << "Invalid choice. Please try again.\n";
-                break;
-            }
-        }
-    } while (choice != 5);
+    // Graph operations
+    string folderPath = "C:/Videos";
+    processFolder(folderPath);
 
     return 0;
 }
